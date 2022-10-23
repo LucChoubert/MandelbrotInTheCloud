@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!--
+    Web page by Luc Choubert
+   
+    October 2022: First version
+-->
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mandelbrot Set Viewer</title>
+    <style type="text/css">
+        body {
+            background-color: #f1eaea;
+        }
+
+        canvas {
+            display: block;
+            background-color: #BBBBBB;
+        }
+
+        #canvas-holder {
+            display: inline-block;
+            border: 2px solid black;
+            margin: 0;
+            padding: 0;
+        }
+
+        #controls {
+            display: inline-block;
+            background-color: white;
+            border-left: 2px solid black;
+            border-right: 2px solid black;
+            border-top: 2px solid black;
+            padding: 0;
+            margin-right: 10px;
+        }
+
+        #controls p {
+            margin: 12px 0;
+            white-space: nowrap;
+        }
+
+        div.group {
+            padding: 0 8px;
+            border-bottom: 2px solid black;
+        }
+
+        #imagediv p {
+            margin: 4px 0;
+            white-space: nowrap;
+        }
+
+        #imagediv {
+            margin-left: 20px;
+            padding: 0;
+        }
+
+        #status {
+            white-space: nowrap;
+            font-weight: bold;
+            color: #AA0000;
+        }
+
+        textarea {
+            white-space: pre;
+            word-wrap: normal;
+            overflow-x: scroll;
+        }
+    </style>
+
+    <script>
+        "use strict";
+
+        function draw() {
+            alert("LET'S DRAW:\n\n"
+                + "xmin=" + document.getElementById("xmin").value + "\n"
+                + "xmax=" + document.getElementById("xmax").value + "\n"
+                + "ymin=" + document.getElementById("ymin").value + "\n"
+                + "ymax=" + document.getElementById("ymax").value);
+
+            var areturnValue = callMandelbrotBackend();
+
+            //alert(areturnValue);
+
+            dramImageSet();
+        }
+
+        async function callMandelbrotBackend() {
+            var response = null
+            var aJson = null
+            try {
+                response = await fetch('https://api.echo.lu/v1/experiences', {
+                    method: 'POST',
+                    body: "TOTO", // string or object
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                alert("Response:" + await response.text());
+                aJson = await response.json(); //extract JSON from the http response
+                alert(aJSON);
+            }
+            catch (e) {
+                alert("Response:" + await response.text() + "\n" + "Error:" + e);
+            }
+            return aJson
+            // do something with aJson
+        }
+
+
+        function dramImageSet() {
+            var canvas = document.getElementById("imageCanvas");
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#FF0000";
+            ctx.fillRect(0, 0, 800, 600);
+        }
+
+        function restore() {
+            document.getElementById("xmin").value = "-2";
+            document.getElementById("xmax").value = "1";
+            document.getElementById("ymin").value = "-1.5";
+            document.getElementById("ymax").value = "1.5";
+        }
+
+        function init() {
+            restore()
+        }
+    </script>
+
+</head>
+
+<body onload="init()">
+
+    <h2 style="margin-top:0">Mandelbrot Set Viewer</h2>
+    <p><b>Drag on the image to draw a box, and the program will zoom in on that box.<br>
+            <p id="message"></p>
+
+            <table border=0 cellpadding=0 cellspacing=0>
+                <tr valign="top">
+                    <td>
+                        <div id="controls">
+                            <div class="group">
+                                <p><label>Xmin:</label><input id="xmin" type="text" size="4" value="-2">
+                                    <label>Xmax:</label><input id="xmax" type="text" size="4" value="1">
+                                </p>
+                                <p><label>Ymin:</label><input id="ymin" type="text" size="4" value="-1.5">
+                                    <label>Ymax:</label><input id="ymax" type="text" size="4" value="1.5">
+                                </p>
+                            </div>
+                            <div class="group">
+                                <p>
+                                    <button id="drawButton" onclick="draw()">Draw</button>
+                                    <button id="restoreButton" onclick="restore()" title="Restore default area">Restore
+                                        Defaults</button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div id="imagediv">
+                            <p>
+                            <div id="canvas-holder">
+                                <canvas id="imageCanvas" width="800" height="600"></canvas>
+                            </div>
+    </p>
+    </div>
+    </td>
+    </tr>
+    </table>
+
+</body>
+
+</html>
