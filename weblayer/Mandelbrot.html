@@ -73,11 +73,11 @@
         "use strict";
 
         function draw() {
-            alert("LET'S DRAW:\n\n"
-                + "xmin=" + document.getElementById("xmin").value + "\n"
-                + "xmax=" + document.getElementById("xmax").value + "\n"
-                + "ymin=" + document.getElementById("ymin").value + "\n"
-                + "ymax=" + document.getElementById("ymax").value);
+            // alert("LET'S DRAW:\n\n"
+            //     + "xmin=" + document.getElementById("xmin").value + "\n"
+            //     + "xmax=" + document.getElementById("xmax").value + "\n"
+            //     + "ymin=" + document.getElementById("ymin").value + "\n"
+            //     + "ymax=" + document.getElementById("ymax").value);
 
             var areturnValue = callMandelbrotBackend();
 
@@ -90,14 +90,14 @@
             var response = null
             var aJson = null
             try {
-                response = await fetch('https://api.echo.lu/v1/experiences', {
+                response = await fetch('http://127.0.0.1:5000', {
                     method: 'POST',
                     body: "TOTO", // string or object
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
-                alert("Response:" + await response.text());
+                //alert("Response:" + await response.text());
                 aJson = await response.json(); //extract JSON from the http response
                 alert(aJSON);
             }
