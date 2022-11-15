@@ -69,47 +69,68 @@
         }
     </style>
 
-    <script>
+    <script type="text/javascript">
         "use strict";
 
+        // Log X and Y coordinates after a click somewhere on the canvas 
+        function getMousePosition(canvas, event, point) {
+            let rect = canvas.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+            point.x = x
+            point.y = y
+            //console.log("Coordinate x: " + point.x, 
+            //            "Coordinate y: " + point.y);
+        }
+
         function draw() {
-            // alert("LET'S DRAW:\n\n"
-            //     + "xmin=" + document.getElementById("xmin").value + "\n"
-            //     + "xmax=" + document.getElementById("xmax").value + "\n"
-            //     + "ymin=" + document.getElementById("ymin").value + "\n"
-            //     + "ymax=" + document.getElementById("ymax").value);
-
             var areturnValue = callMandelbrotBackend();
-
-            //alert(areturnValue);
-
-            dramImageSet();
         }
 
         async function callMandelbrotBackend() {
+            // TODO show a "computing icone until answer retrieved + log performance of the backend call"
             var response = null
             var aJson = null
+            document.getElementById('loading-message').style.visibility = 'visible'
             try {
-                response = await fetch('http://127.0.0.1:5000', {
+                response = await fetch('http://127.0.0.1:5000/draw', {
                     method: 'POST',
-                    body: "TOTO", // string or object
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({
+                        'xmin': document.getElementById('xmin').value,
+                        'xmax': document.getElementById('xmax').value,
+                        'ymin': document.getElementById('ymin').value,
+                        'ymax': document.getElementById('ymax').value
+                    })
                 });
-                //alert("Response:" + await response.text());
-                aJson = await response.json(); //extract JSON from the http response
-                alert(aJSON);
+                //aJson = await response.json(); //extract JSON from the http response
+                //alert(JSON.stringify(aJson));
+                const imageBlob = await response.blob()
+                const imageBase64 = URL.createObjectURL(imageBlob)
+                //console.log({imageBase64})
+                var canvas = document.getElementById('imageCanvas');
+                var ctx = canvas.getContext('2d');
+                var image = new Image()
+                image.src = imageBase64
+                image.addEventListener("load", (e) => {
+                  ctx.drawImage(image, 0, 0);
+                  document.getElementById('loading-message').style.visibility = 'hidden'
+                });
+
+                //document.body.appendChild(image);
             }
             catch (e) {
-                alert("Response:" + await response.text() + "\n" + "Error:" + e);
+                //alert("Response:" + await response.text() + "\n" + "Error:" + e);
+                alert("ERROR HAPPENED:" + e)
             }
             return aJson
             // do something with aJson
         }
 
 
-        function dramImageSet() {
+        function drawImageSet() {
             var canvas = document.getElementById("imageCanvas");
             var ctx = canvas.getContext("2d");
             ctx.fillStyle = "#FF0000";
@@ -117,14 +138,72 @@
         }
 
         function restore() {
-            document.getElementById("xmin").value = "-2";
-            document.getElementById("xmax").value = "1";
-            document.getElementById("ymin").value = "-1.5";
-            document.getElementById("ymax").value = "1.5";
+            document.getElementById('xmin').value = "-2";
+            document.getElementById('xmax').value = "1";
+            document.getElementById('ymin').value = "-1.5";
+            document.getElementById('ymax').value = "1.5";
         }
+
+        var clickDownX
+        var clickDownY 
+        var clickUpX
+        var clickUpY 
 
         function init() {
             restore()
+            var canvas = document.getElementById("imageCanvas");
+            canvas.addEventListener("mousedown", function(e)
+            {
+                var point = { x:0,
+                              y:0 }
+                getMousePosition(canvas, e, point);
+                clickDownX = point.x
+                clickDownY = point.y
+
+            });
+            canvas.addEventListener("mouseup", function(e)
+            {
+                var point = { x:0,
+                              y:0 }
+                getMousePosition(canvas, e, point);
+                clickUpX = point.x
+                clickUpY = point.y
+
+                // TODO: convert into x and y coordinate with reasonable truncation
+                var aXmin = parseFloat(document.getElementById('xmin').value)
+                var aXmax = parseFloat(document.getElementById('xmax').value)
+                var aYmin = parseFloat(document.getElementById('ymin').value)
+                var aYmax = parseFloat(document.getElementById('ymax').value)
+
+                var clickXmin = Math.round(Math.min(clickDownX, clickUpX))
+                var clickXmax = Math.round(Math.max(clickDownX, clickUpX))
+                var clickYmin = Math.round(Math.min(clickDownY, clickUpY))
+                var clickYmax = Math.round(Math.max(clickDownY, clickUpY))
+
+                var width = canvas.clientWidth
+                var height = canvas.clientHeight
+
+                //Keep aspect ratio of the selection
+                if ( ((clickXmax-clickXmin)/width*height) > (clickYmax-clickYmin) ) {
+                    // adapt Y
+                    var adaptationY = Math.round( ( (clickXmax-clickXmin)/width*height - (clickYmax-clickYmin) ) / 2)
+                    clickYmax += adaptationY
+                    clickYmin -= adaptationY
+                } else {
+                    // adapt X
+                    var adaptationX = Math.round( ( (clickYmax-clickYmin)/height*width - (clickXmax-clickXmin) ) / 2)
+                    clickXmax += adaptationX
+                    clickXmin -= adaptationX
+                }
+
+                document.getElementById('xmin').value = aXmin+(aXmax-aXmin)*clickXmin/width;
+                document.getElementById('xmax').value = aXmin+(aXmax-aXmin)*clickXmax/width;
+                document.getElementById('ymin').value = aYmin+(aYmax-aYmin)*clickYmin/height;
+                document.getElementById('ymax').value = aYmin+(aYmax-aYmin)*clickYmax/height;
+
+                draw()
+            });
+            draw()
         }
     </script>
 
@@ -138,35 +217,38 @@
 
             <table border=0 cellpadding=0 cellspacing=0>
                 <tr valign="top">
-                    <td>
+                    <td style="text-align: center">
                         <div id="controls">
                             <div class="group">
-                                <p><label>Xmin:</label><input id="xmin" type="text" size="4" value="-2">
+                                <p>
+                                    <label>Xmin:</label><input id="xmin" type="text" size="4" value="-2">
                                     <label>Xmax:</label><input id="xmax" type="text" size="4" value="1">
                                 </p>
-                                <p><label>Ymin:</label><input id="ymin" type="text" size="4" value="-1.5">
+                                <p>
+                                    <label>Ymin:</label><input id="ymin" type="text" size="4" value="-1.5">
                                     <label>Ymax:</label><input id="ymax" type="text" size="4" value="1.5">
                                 </p>
                             </div>
                             <div class="group">
                                 <p>
                                     <button id="drawButton" onclick="draw()">Draw</button>
-                                    <button id="restoreButton" onclick="restore()" title="Restore default area">Restore
-                                        Defaults</button>
+                                    <button id="restoreButton" onclick="restore(); draw()" title="Restore default area">Restore Defaults</button>
+                                </p>
                             </div>
                         </div>
                     </td>
-                    <td>
+                    <td style="text-align: center">
                         <div id="imagediv">
                             <p>
                             <div id="canvas-holder">
-                                <canvas id="imageCanvas" width="800" height="600"></canvas>
+                                <canvas id="imageCanvas" width="640" height="480"></canvas>
                             </div>
-    </p>
-    </div>
-    </td>
-    </tr>
-    </table>
+                            <div id="loading-message" style="visibility: hidden">Fetching Image from backend...</div>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
 </body>
 

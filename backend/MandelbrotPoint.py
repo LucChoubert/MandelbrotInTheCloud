@@ -1,0 +1,1 @@
+../../../GitHub/mandelbrot-py/MandelbrotPoint.py
