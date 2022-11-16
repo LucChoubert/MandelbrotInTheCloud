@@ -4,7 +4,9 @@ TAG          := $(shell git log -1 --pretty=%h)
 DEPLOYMENT   := deployment/covidattestationgenerator
 PWD          := $(shell pwd)
 
-all: build run_dev
+all_dev: build_dev run_dev
+
+all_prd: build_prd run_prd
 
 build_dev:
 	docker build --target DEV -t $(IMAGE)-dev:$(TAGDEV) -f Containerfile .
