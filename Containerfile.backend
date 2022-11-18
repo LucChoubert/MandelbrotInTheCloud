@@ -24,4 +24,4 @@ FROM base AS PRD
 
 RUN pip install --no-cache-dir gunicorn
 
-CMD [ "python", "-m", "flask", "--app", "MandelbrotBackend", "run", "--host=0.0.0.0" ]
+CMD ["gunicorn", "--log-level", "info", "--access-logfile", "-", "-b", "0.0.0.0:5000", "MandelbrotBackend:app"]
