@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM index.docker.io/library/nginx:alpine
 
 COPY frontend/*.html /usr/share/nginx/html/
 COPY frontend/*.ico /usr/share/nginx/html/

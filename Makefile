@@ -1,4 +1,6 @@
-IMAGEBACK   := lucchoubert/mandelbrotbackend
+DOCKER       := podman
+APPNAME      := MandelbrotApp
+IMAGEBACK    := lucchoubert/mandelbrotbackend
 IMAGEFRONT   := lucchoubert/mandelbrotfrontend
 TAGDEV       := latest
 TAG          := $(shell git log -1 --pretty=%h)
@@ -10,28 +12,34 @@ all_dev: build_dev run_dev
 all_prd: build_prd run_prd
 
 build_dev:
-	docker build --target DEV -t $(IMAGEBACK)-dev:$(TAGDEV) -f Containerfile.backend .
-	#docker tag $(IMAGEBACK)-dev:$(TAG) $(IMAGEBACK):latest
+	$(DOCKER) build --target DEV -t $(IMAGEBACK)-dev:$(TAGDEV) -f Containerfile.backend .
+	#$(DOCKER) tag $(IMAGEBACK)-dev:$(TAG) $(IMAGEBACK):latest
  
 run_dev:
-	docker run -it --mount type=bind,source=$(PWD)/backend/,target=/app --mount type=bind,source=$(PWD)/frontend/,target=/app/static/ -p 5000:5000 $(IMAGEBACK)-dev
+	$(DOCKER) run -it --mount type=bind,source=$(PWD)/backend/,target=/app --mount type=bind,source=$(PWD)/frontend/,target=/app/static/ -p 5000:5000 $(IMAGEBACK)-dev
 
 build_prd:
-	docker build --target PRD -t $(IMAGEBACK):$(TAGDEV) -f Containerfile.backend .
-	docker build -t $(IMAGEFRONT):$(TAGDEV) -f Containerfile.frontend .
+	$(DOCKER) build --target PRD -t $(IMAGEBACK):$(TAGDEV) -f Containerfile.backend .
+	$(DOCKER) build -t $(IMAGEFRONT):$(TAGDEV) -f Containerfile.frontend .
 
 run_prd:
-	docker run -d -p 5000:5000 $(IMAGEBACK)
-	docker run -d -p 8080:80 $(IMAGEFRONT)
+	#$(DOCKER) pod create -p 8080:80 --name $(APPNAME)
+	#$(DOCKER) run --pod $(APPNAME) -d $(IMAGEBACK)
+	#$(DOCKER) run --pod $(APPNAME) -d $(IMAGEFRONT)
+	$(DOCKER) play kube MandelbrotAppPod.yaml
+
+stop_prd:
+	$(DOCKER) pod stop $(APPNAME)
+	$(DOCKER) pod rm $(APPNAME)
 
 push:
-	docker push ${IMAGEBACK}
+	$(DOCKER) push ${IMAGEBACK}
 
 clean:
-	docker IMAGEBACK rm -f ${IMAGEBACK}-dev:latest
-	docker IMAGEBACK rm -f ${IMAGEBACK}:latest
-	docker IMAGEFRONT rm -f ${IMAGEBACK}-dev:latest
-	docker IMAGEFRONT rm -f ${IMAGEBACK}:latest
+	$(DOCKER) image rm -f ${IMAGEBACK}-dev:latest
+	$(DOCKER) image rm -f ${IMAGEBACK}:latest
+	$(DOCKER) image rm -f ${IMAGEBACK}-dev:latest
+	$(DOCKER) image rm -f ${IMAGEBACK}:latest
 
 login:
-	docker log -u ${DOCKER_USER} -p ${DOCKER_PASS}
+	$(DOCKER) log -u ${DOCKER_USER} -p ${DOCKER_PASS}

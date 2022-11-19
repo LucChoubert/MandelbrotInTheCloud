@@ -1,5 +1,5 @@
 # Use the official image as a parent image.
-FROM python:3-slim AS base
+FROM index.docker.io/library/python:3-slim AS base
 
 # We copy just the requirements.txt first to leverage Docker cache
 COPY ./backend/requirements.txt /app/requirements.txt
