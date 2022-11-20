@@ -5,13 +5,12 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: "2022-11-19T15:23:54Z"
   labels:
     app: MandelbrotApp
   name: MandelbrotApp
 spec:
   containers:
-  - image: localhost/lucchoubert/mandelbrotbackend:latest
+  - image: localhost/mandelbrotbackend:latest
     name: backend
     ports:
     - containerPort: 80
@@ -27,7 +26,7 @@ spec:
     - nginx
     - -g
     - daemon off;
-    image: localhost/lucchoubert/mandelbrotfrontend:latest
+    image: localhost/mandelbrotfrontend:latest
     name: frontend
     resources: {}
     securityContext:
