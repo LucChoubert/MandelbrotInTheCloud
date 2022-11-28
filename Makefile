@@ -4,7 +4,6 @@ IMAGEBACK    := mandelbrotbackend
 IMAGEFRONT   := mandelbrotfrontend
 TAGDEV       := latest
 TAG          := $(shell git log -1 --pretty=%h)
-DEPLOYMENT   := deployment/covidattestationgenerator
 PWD          := $(shell pwd)
 
 
@@ -12,27 +11,33 @@ PWD          := $(shell pwd)
 # Virtual env & VM
 ######################################
 
-#TODO
+.PHONY: install_virtualenv_dev
+install_virtualenv_dev:
+	rm -rf .venv
+	python3 -m venv .venv
+	. .venv/bin/activate; pip3 install -r ./src/backend/requirements.txt
+
 .PHONY: run_virtualenv_dev
 run_virtualenv_dev:
+	. .venv/bin/activate; python3 -B -m flask --app ./src/backend/MandelbrotBackend --debug run --host=0.0.0.0
 
-#TODO
 .PHONY: clean_virtualenv_dev
 clean_virtualenv_dev:
+	rm -rf .venv
 
 #The first following line of the target is to use the repo default script when the os does not provide this script
 .PHONY: build_artifact
-build_artifact:
+build_vm_prd:
 	$(eval WRITE-MIME-MULTIPART := $(shell [ -z `which write-mime-multipart` ] && echo "virtualmachine/write-mime-multipart.default"  || echo `which write-mime-multipart` ))
 	@echo "*************************************"
 	@echo "* Build tarball artifact            *"
 	@echo "*************************************"
-	rm -f virtualmachine/project.tar.gz virtualmachine/install.sh
-	tar -czf virtualmachine/project.tar.gz ./src/backend ./src/frontend
-	./virtualmachine/addpayload.sh --base64 virtualmachine/project.tar.gz
+	rm -f virtualmachine/$(APPNAME).tar.gz virtualmachine/install.sh
+	tar -czf virtualmachine/$(APPNAME).tar.gz ./src/backend ./src/frontend
+	./virtualmachine/addpayload.sh --base64 virtualmachine/$(APPNAME).tar.gz
 	echo $(WRITE-MIME-MULTIPART)
 	$(WRITE-MIME-MULTIPART) --output ./virtualmachine/combined-userdata.mime ./virtualmachine/cloud-init-centos.yaml:text/cloud-config ./virtualmachine/install.sh:text/x-shellscript
-	rm -f virtualmachine/project.tar.gz virtualmachine/install.sh
+	rm -f virtualmachine/$(APPNAME).tar.gz virtualmachine/install.sh
 
 .PHONY: run_vm_prd
 run_vm_prd:
