@@ -1,0 +1,53 @@
+#!/bin/bash
+
+base64=1
+binary=0
+
+
+function untar_payload()
+{
+	match=$(grep --text --line-number '^PAYLOAD:$' $0 | cut -d ':' -f 1)
+	payload_start=$((match + 1))
+	if [[ $binary -ne 0 ]]; then
+		tail -n +$payload_start $0 | tar -tzvf -
+	fi
+	if [[ $base64 -ne 0 ]]; then
+		tail -n +$payload_start $0 | base64 -d | tar -xzf - --directory /home/app
+	fi
+}
+
+
+APP_PATH="/home/app"
+cd ${APP_PATH}
+
+untar_payload
+
+#Install nginx config files
+#Cannot just deploy the ngingx full config as there is a master one already on the centos image. Need to extract all the relevant part for the location isntruction of the application
+cat /etc/nginx/nginx.conf | sed -z 's/location \/ {[ ]*\n[ ]*}//' > ./src/frontend/nginx.conf
+cp ./src/frontend/nginx.conf /etc/nginx/nginx.conf
+#cp ./src/frontend/*.conf /etc/nginx/default.d/
+cat ./src/frontend/default.conf | sed -n '/BEGIN APP/,/END APP/p' > /etc/nginx/default.d/default.conf
+
+#Install web content files
+cp ./src/frontend/*.html /usr/share/nginx/html/
+cp ./src/frontend/*.ico /usr/share/nginx/html/
+
+#Create log directory
+mkdir ${APP_PATH}/log
+
+#Realign owner of files
+chown --recursive --silent app:app ${APP_PATH}
+
+#Install python backend environment
+cd ${APP_PATH}/src/backend
+pip3 install -r requirements.txt
+pip3 install --no-cache-dir gunicorn
+
+#Run App backend
+runuser -u app -- gunicorn --daemon --log-level info --access-logfile ${APP_PATH}/log/access-logfile.log -b 0.0.0.0:5000 MandelbrotBackend:app
+
+#Run Nginx
+nginx
+
+exit 0

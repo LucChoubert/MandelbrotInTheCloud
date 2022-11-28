@@ -16,12 +16,12 @@ EXPOSE 5000
 # Development Stage
 FROM base AS DEV
 
-CMD [ "python", "-m", "flask", "--app", "MandelbrotBackend", "--debug", "run", "--host=0.0.0.0" ]
+CMD [ "python", "-B", "-m", "flask", "--app", "MandelbrotBackend", "--debug", "run", "--host=0.0.0.0" ]
 
 
 # Production Stage
 FROM base AS PRD
 
-RUN pip install --no-cache-dir gunicorn
+RUN pip3 install --no-cache-dir gunicorn
 
 CMD ["gunicorn", "--log-level", "info", "--access-logfile", "-", "-b", "0.0.0.0:5000", "MandelbrotBackend:app"]

@@ -1,0 +1,23 @@
+#cloud-config
+
+users:
+  - name: app
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBq3qNWdZ9ZaW/rkkpLG+shDC6p9wXT5QuiJ0P+WV5FK9tMV321WMgI13sXEsAL/YGcmIlE7kWt9fKk1pRA3WPU7GpV5hguh17zPlLyuT0meKYcKuMG789388hyh4Lmv1fCHlkxbV+VN6fBEJt7LaIQ8w69tWVWGv+WWkrjLzhSzurbmRsfcDMatWa2SmpyeFu7jpt+nwIDM42Xf/BcOz4dBKyeGheicJQX+DQGkBRUIV3c1J35E9qTXN0Hz9hWSONbA59seqv8Hm8gQtHsMr2lS4VG5TBwLf6V9n7efhHptsnClltVKgWW1VdYt8JuGZeyDwLZax06lyn3iCi8h45 ssh-key-2022-09-12
+
+# Remove to avoid long boot time
+#package_upgrade: true
+
+packages:
+  - gcc
+  - zlib-devel
+  - libjpeg-devel
+  - python3-devel
+  - python3
+  - nginx
+
+runcmd:
+  - [sh, -xc, "echo I have finished  > /tmp/my_output.log" ]
+
+final_message: "The system is finally up, after $UPTIME seconds"

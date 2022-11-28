@@ -17,7 +17,7 @@ def get_ico():
     return send_file(filename, mimetype='image/vnd.microsoft.icon')
 
 # Test endpoint to quickly check that backend is up and running
-@app.post('/test')
+@app.get('/test')
 def test():
     return jsonify({'status': 'up'})
 
