@@ -20,17 +20,19 @@ run_virtualenv_dev:
 .PHONY: clean_virtualenv_dev
 clean_virtualenv_dev:
 
-
+#The first following line of the target is to use the repo default script when the os does not provide this script
 .PHONY: build_artifact
 build_artifact:
+	$(eval WRITE-MIME-MULTIPART := $(shell [ -z `which write-mime-multipart` ] && echo "virtualmachine/write-mime-multipart.default"  || echo `which write-mime-multipart` ))
 	@echo "*************************************"
 	@echo "* Build tarball artifact            *"
 	@echo "*************************************"
-	rm -f virtualmachine/project.tar.gz
+	rm -f virtualmachine/project.tar.gz virtualmachine/install.sh
 	tar -czf virtualmachine/project.tar.gz ./src/backend ./src/frontend
 	./virtualmachine/addpayload.sh --base64 virtualmachine/project.tar.gz
-	rm -f virtualmachine/project.tar.gz
-	write-mime-multipart --output ./virtualmachine/combined-userdata.mime ./virtualmachine/cloud-init-centos.yaml:text/cloud-config ./virtualmachine/install.sh:text/x-shellscript
+	echo $(WRITE-MIME-MULTIPART)
+	$(WRITE-MIME-MULTIPART) --output ./virtualmachine/combined-userdata.mime ./virtualmachine/cloud-init-centos.yaml:text/cloud-config ./virtualmachine/install.sh:text/x-shellscript
+	rm -f virtualmachine/project.tar.gz virtualmachine/install.sh
 
 .PHONY: run_vm_prd
 run_vm_prd:
@@ -43,7 +45,7 @@ run_vm_prd:
 				 --priority Spot \
 				 --image OpenLogic:CentOS:8_5:latest \
 				 --custom-data ./virtualmachine/combined-userdata.mime \
-				 --ssh-key-values ~/.ssh/cloud/ssh-key-2022-09-12.key.pub \
+				 --ssh-key-values ~/.ssh/cloud/ssh-key-for-cloud.key.pub \
 				 --public-ip-sku standard \
 				 --nic-delete-option delete \
 				 --os-disk-delete-option delete \
@@ -65,7 +67,7 @@ getip:
 	$(eval VMCONNECT := $(shell [ -z "$(VMDNS)" ] && echo $(VMIP) || echo $(VMDNS) ))
 	@echo "******************************************************************************************"
 	@echo "* You can test via url: curl http://$(VMCONNECT)/test                                   *"
-	@echo "* You can ssh connect with: ssh  -i ~/.ssh/cloud/ssh-key-2022-09-12.key app@$(VMCONNECT) *"
+	@echo "* You can ssh connect with: ssh  -i ~/.ssh/cloud/ssh-key-for-cloud.key app@$(VMCONNECT) *"
 	@echo "* You can connect to MandelbrotInTheCloud via: http://$(VMCONNECT) *"
 	@echo "******************************************************************************************"
 
