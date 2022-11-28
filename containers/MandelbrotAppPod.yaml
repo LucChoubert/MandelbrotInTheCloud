@@ -10,7 +10,7 @@ metadata:
   name: MandelbrotApp
 spec:
   containers:
-  - image: localhost/mandelbrotbackend:latest
+  - image: localhost/lucchoubert/mandelbrotbackend:latest
     name: backend
     ports:
     - containerPort: 80
@@ -26,7 +26,7 @@ spec:
     - nginx
     - -g
     - daemon off;
-    image: localhost/mandelbrotfrontend:latest
+    image: localhost/lucchoubert/mandelbrotfrontend:latest
     name: frontend
     resources: {}
     securityContext:

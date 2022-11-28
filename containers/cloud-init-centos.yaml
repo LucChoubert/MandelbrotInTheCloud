@@ -1,0 +1,63 @@
+#cloud-config
+
+users:
+  - name: app
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDBq3qNWdZ9ZaW/rkkpLG+shDC6p9wXT5QuiJ0P+WV5FK9tMV321WMgI13sXEsAL/YGcmIlE7kWt9fKk1pRA3WPU7GpV5hguh17zPlLyuT0meKYcKuMG789388hyh4Lmv1fCHlkxbV+VN6fBEJt7LaIQ8w69tWVWGv+WWkrjLzhSzurbmRsfcDMatWa2SmpyeFu7jpt+nwIDM42Xf/BcOz4dBKyeGheicJQX+DQGkBRUIV3c1J35E9qTXN0Hz9hWSONbA59seqv8Hm8gQtHsMr2lS4VG5TBwLf6V9n7efhHptsnClltVKgWW1VdYt8JuGZeyDwLZax06lyn3iCi8h45 ssh-key-2022-09-12
+
+# Remove to avoid long boot time
+#package_upgrade: true
+
+packages:
+  - podman
+
+write_files:
+  - path: /root/MandelbrotAppPod.yaml
+    content: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        labels:
+          app: MandelbrotApp
+        name: MandelbrotApp
+      spec:
+        containers:
+        - image: docker.io/lucchoubert/mandelbrotbackend:latest
+          name: backend
+          ports:
+          - containerPort: 80
+            hostPort: 80
+          resources: {}
+          securityContext:
+            capabilities:
+              drop:
+              - CAP_MKNOD
+              - CAP_NET_RAW
+              - CAP_AUDIT_WRITE
+        - args:
+          - nginx
+          - -g
+          - daemon off;
+          image: docker.io/lucchoubert/mandelbrotfrontend:latest
+          name: frontend
+          resources: {}
+          securityContext:
+            capabilities:
+              drop:
+              - CAP_MKNOD
+              - CAP_NET_RAW
+              - CAP_AUDIT_WRITE
+        restartPolicy: Never
+      status: {}
+    owner: 'app:app'
+    permissions: '0400'
+#   defer: true # Does not work in Cloud-init 21.1 used Oct-22. Suported in 21.4
+
+runcmd:
+  - [sh, -xc, "install -m 0640 -o app -g app /root/MandelbrotAppPod.yaml /home/app/MandelbrotAppPod.yaml" ]
+#  - [sh, -xc, "runuser -u app -- podman play kube /home/app/MandelbrotAppPod.yaml" ]
+  - [sh, -xc, "podman play kube /home/app/MandelbrotAppPod.yaml" ]
+  - [sh, -xc, "echo I have finished  > /tmp/my_output.log" ]
+
+final_message: "The system is finally up, after $UPTIME seconds"

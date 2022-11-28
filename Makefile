@@ -1,7 +1,7 @@
 DOCKER       := podman
 APPNAME      := MandelbrotApp
-IMAGEBACK    := mandelbrotbackend
-IMAGEFRONT   := mandelbrotfrontend
+IMAGEBACK    := lucchoubert/mandelbrotbackend
+IMAGEFRONT   := lucchoubert/mandelbrotfrontend
 TAGDEV       := latest
 TAG          := $(shell git log -1 --pretty=%h)
 PWD          := $(shell pwd)
@@ -64,17 +64,6 @@ run_vm_prd:
 							   --protocol Tcp \
 							   --description "Allow standard http traffic on port 80 to any IP address"
 	az vm list
-
-.PHONY: getip
-getip:
-	$(eval VMIP  := $(shell az vm show -d -g myResourceGroup -n vmApp --query publicIps -o tsv ))
-	$(eval VMDNS := $(shell az vm show -d -g myResourceGroup -n vmApp --query fqdns -o tsv ))
-	$(eval VMCONNECT := $(shell [ -z "$(VMDNS)" ] && echo $(VMIP) || echo $(VMDNS) ))
-	@echo "******************************************************************************************"
-	@echo "* You can test via url: curl http://$(VMCONNECT)/test                                   *"
-	@echo "* You can ssh connect with: ssh  -i ~/.ssh/cloud/ssh-key-for-cloud.key app@$(VMCONNECT) *"
-	@echo "* You can connect to MandelbrotInTheCloud via: http://$(VMCONNECT) *"
-	@echo "******************************************************************************************"
 
 .PHONY: delete_vm_prd
 delete_vm_prd:
@@ -141,8 +130,36 @@ run_prd:
 	@echo "* You can access the webapp via: http://localhost:8080/mandelbrot.html *"
 	@echo "************************************************************************"
 
+.PHONY: run_cloud_prd
+run_cloud_prd:
+	@echo "*************************************"
+	@echo "* Starting VM on azure              *"
+	@echo "*************************************"
+	@$(DOCKER) push ${IMAGEBACK}
+	@$(DOCKER) push ${IMAGEFRONT}
+	az vm list
+	az vm create --resource-group myResourceGroup \
+				 --name vmApp \
+				 --priority Spot \
+				 --image OpenLogic:CentOS:8_5:latest \
+				 --custom-data ./containers/cloud-init-centos.yaml \
+				 --ssh-key-values ~/.ssh/cloud/ssh-key-for-cloud.key.pub \
+				 --public-ip-sku standard \
+				 --nic-delete-option delete \
+				 --os-disk-delete-option delete \
+				 --public-ip-address-dns-name mandelbrotinthecloud
+	az network nsg rule create --resource-group myResourceGroup \
+							   --nsg-name vmAppNSG \
+							   --name AllowHttpInbound \
+							   --priority 1050 \
+							   --destination-port-ranges 80 \
+							   --access Allow \
+							   --protocol Tcp \
+							   --description "Allow standard http traffic on port 80 to any IP address"
+	az vm list
+
 .PHONY: clean_prd
-stop_prd:
+clean_prd:
 	$(DOCKER) pod stop $(APPNAME)
 	$(DOCKER) pod rm $(APPNAME)
 
@@ -150,20 +167,31 @@ stop_prd:
 clean_images:
 	$(DOCKER) image rm -f ${IMAGEBACK}-dev:latest
 	$(DOCKER) image rm -f ${IMAGEBACK}:latest
-	$(DOCKER) image rm -f ${IMAGEBACK}-dev:latest
-	$(DOCKER) image rm -f ${IMAGEBACK}:latest
+	$(DOCKER) image rm -f ${IMAGEFRONT}-dev:latest
+	$(DOCKER) image rm -f ${IMAGEFRONT}:latest
 
 .PHONY: clean_containers
 clean_containers:
 	$(DOCKER) rm `$(DOCKER) ps -a | grep "Exited " | cut -f 1`
 
-# Used later for synchro with remote artifacts repo
 
-#.PHONY: push
-#push:
-#	$(DOCKER) push ${IMAGEBACK}
+######################################
+# Utility Targets
+######################################
 
-#login:
-#	$(DOCKER) log -u ${DOCKER_USER} -p ${DOCKER_PASS}
+.PHONY: login
+dockerio_login:
+	$(DOCKER) log -u ${DOCKER_USER} -p ${DOCKER_PASS}
 
 
+.PHONY: getip
+getip:
+	$(eval VMIP  := $(shell az vm show -d -g myResourceGroup -n vmApp --query publicIps -o tsv ))
+	$(eval VMDNS := $(shell az vm show -d -g myResourceGroup -n vmApp --query fqdns -o tsv ))
+	$(eval VMCONNECT := $(shell [ -z "$(VMDNS)" ] && echo $(VMIP) || echo $(VMDNS) ))
+	@echo "******************************************************************************************"
+	@echo "* IP of the VM is $(VMIP)                                       *"
+	@echo "* You can test via url: curl http://$(VMCONNECT)/test                                   *"
+	@echo "* You can ssh connect with: ssh -i ~/.ssh/cloud/ssh-key-for-cloud.key -o StrictHostKeyChecking=false app@$(VMCONNECT) *"
+	@echo "* You can connect to MandelbrotInTheCloud via: http://$(VMCONNECT) *"
+	@echo "******************************************************************************************"
