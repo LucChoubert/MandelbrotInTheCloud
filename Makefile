@@ -74,12 +74,14 @@ delete_vm_prd:
 	az vm delete --resource-group myResourceGroup \
 				 --name vmApp \
 				 --yes
-	az network nsg delete --resource-group myResourceGroup \
-						  --name vmAppNSG
+	az network nic delete --resource-group myResourceGroup \
+				 				--name vmAppNetInt
 	az network public-ip delete --resource-group myResourceGroup \
 				 				--name vmAppPublicIP
 	az network vnet delete --resource-group myResourceGroup \
 				 		   --name vmAppVNET
+	az network nsg delete --resource-group myResourceGroup \
+						  --name vmAppNSG
 	az vm list
 
 
@@ -173,6 +175,29 @@ clean_images:
 .PHONY: clean_containers
 clean_containers:
 	$(DOCKER) rm `$(DOCKER) ps -a | grep "Exited " | cut -f 1`
+
+######################################
+# IaC
+######################################
+.PHONY: provision_iac_prd
+provision_iac_prd:
+	@echo "*************************************"
+	@echo "* Starting Infra on azure with Code *"
+	@echo "*************************************"
+	az vm list
+	az deployment group create  --resource-group myResourceGroup \
+	    						--template-file "./IaC/main.bicep" \
+								--parameters @./IaC/main.parameters.json
+	az vm list
+
+.PHONY: run_iac_prd
+run_iac_prd:
+	@echo "*************************************"
+	@echo "* Run container on azure Remote     *"
+	@echo "*************************************"
+	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity /home/luc/.ssh/cloud/ssh-key-for-cloud-ed25519.key info
+	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity /home/luc/.ssh/cloud/ssh-key-for-cloud-ed25519.key play kube ./containers/MandelbrotAppPod.yaml
+	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity /home/luc/.ssh/cloud/ssh-key-for-cloud-ed25519.key ps
 
 
 ######################################

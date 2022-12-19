@@ -1,0 +1,15 @@
+#cloud-config
+
+ssh_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINPyKAZRxltPF8fj5xIKfzMAmnxjFWYnQUmSSQcSfSk0 luc@Luc-Ubuntu
+
+package_upgrade: true
+
+packages:
+  - vim
+  - podman
+
+runcmd:
+  - [sh, -xc, "chmod o+rw /run/podman/podman.sock" ]
+
+final_message: "The system is finally up, after $UPTIME seconds"
