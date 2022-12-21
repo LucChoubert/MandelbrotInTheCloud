@@ -2,6 +2,7 @@
 
 ssh_authorized_keys:
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINPyKAZRxltPF8fj5xIKfzMAmnxjFWYnQUmSSQcSfSk0 luc@Luc-Ubuntu
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMXUqCZQxSfaxfuCX+Ab4be6k8ZvzCkgLwAo8ohJjUYJ
 
 package_upgrade: true
 
