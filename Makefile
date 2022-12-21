@@ -195,9 +195,9 @@ run_iac_prd:
 	@echo "*************************************"
 	@echo "* Run container on azure Remote     *"
 	@echo "*************************************"
-	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity ˜/.ssh/cloud/ssh-key-for-cloud-ed25519.key info
-	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity ˜/.ssh/cloud/ssh-key-for-cloud-ed25519.key play kube ./containers/MandelbrotAppPod.yaml
-	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity ˜/.ssh/cloud/ssh-key-for-cloud-ed25519.key ps
+	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity ~/.ssh/cloud/ssh-key-for-cloud-ed25519.key info
+	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity ~/.ssh/cloud/ssh-key-for-cloud-ed25519.key play kube ./containers/MandelbrotAppPod.yaml
+	$(DOCKER) -r --url ssh://app@mandelbrotinthecloud.northeurope.cloudapp.azure.com:22/run/podman/podman.sock --identity ~/.ssh/cloud/ssh-key-for-cloud-ed25519.key ps
 
 
 ######################################
